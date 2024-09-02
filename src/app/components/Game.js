@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -9,25 +8,22 @@ const Game = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [score, setScore] = useState(0);
 
-
   const birdImageRef = useRef(null);
   const backgroundImageRef = useRef(null);
   const topPipeImageRef = useRef(null);
   const bottomPipeImageRef = useRef(null);
-
+  const scoreRef = useRef(score);
 
   const resetGame = () => {
     setGameOver(false);
     setGameStarted(false);
     setScore(0);
-  
   };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    // Load images
     const birdImage = birdImageRef.current;
     const backgroundImage = backgroundImageRef.current;
     const topPipeImage = topPipeImageRef.current;
@@ -111,15 +107,19 @@ const Game = () => {
           pipes.push({ x: canvas.width, y: pipeTopY - canvas.height, passed: false });
         }
 
+        pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0); 
+
         pipes.forEach(pipe => {
           pipe.x -= pipeVelocity;
           ctx.drawImage(topPipeImage, pipe.x, pipe.y, pipeWidth, canvas.height);
-          let bottomPipeY = pipe.y + canvas.height + pipeGap;
+          const bottomPipeY = pipe.y + canvas.height + pipeGap;
           ctx.drawImage(bottomPipeImage, pipe.x, bottomPipeY, pipeWidth, canvas.height);
 
           if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
             pipe.passed = true;
-            setScore(prevScore => prevScore + 1);
+           
+            scoreRef.current += 1;
+            setScore(scoreRef.current);
           }
         });
 
@@ -139,6 +139,15 @@ const Game = () => {
         ))) {
           setGameOver(true);
         }
+
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '30px Arial';
+        ctx.fillText(`Score: ${scoreRef.current}`, 10, 40);
+      } else {
+        ctx.fillStyle = '#fff';
+        ctx.font = '30px Arial';
+        ctx.fillText(`Score: ${scoreRef.current}`, 10, 40);
       }
 
       if (!gameOver) {
@@ -197,11 +206,29 @@ const Game = () => {
       }}>
         <canvas ref={canvasRef}></canvas>
 
-        {}
         <img ref={birdImageRef} src="/images/bird.png" alt="Bird" style={{ display: 'none' }} />
         <img ref={backgroundImageRef} src="/images/background.png" alt="Background" style={{ display: 'none' }} />
         <img ref={topPipeImageRef} src="/images/top-pipe.png" alt="Top Pipe" style={{ display: 'none' }} />
         <img ref={bottomPipeImageRef} src="/images/bottom-pipe.png" alt="Bottom Pipe" style={{ display: 'none' }} />
+
+        {!gameStarted && !gameOver && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)', 
+            textAlign: 'center', 
+            color: '#fff', 
+            fontSize: 'calc(12px + 2vmin)', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '20px', 
+            backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+            borderRadius: '10px'
+          }}>
+            <h1 style={{ margin: '0 0 10px 0' }}>Welcome</h1>
+            <p>Press Space or Tap to Start</p>
+          </div>
+        )}
 
         {gameOver && (
           <div style={{ 
@@ -211,10 +238,11 @@ const Game = () => {
             transform: 'translate(-50%, -50%)', 
             textAlign: 'center', 
             color: '#fff', 
-            fontSize: 'calc(10px + 2vmin)', 
+            fontSize: 'calc(12px + 2vmin)', 
             fontFamily: 'Arial, sans-serif', 
-            padding: '0 10px', 
-            boxSizing: 'border-box'
+            padding: '20px', 
+            backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+            borderRadius: '10px'
           }}>
             <h1 style={{ margin: '0 0 10px 0' }}>Game Over</h1>
             <p>Final Score: {score}</p>
