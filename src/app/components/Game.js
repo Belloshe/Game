@@ -1,71 +1,65 @@
-'use client'
+
+'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 
 const Game = () => {
   const canvasRef = useRef(null);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true);
   const [score, setScore] = useState(0);
 
-  let birdImage, backgroundImage, topPipeImage, bottomPipeImage;
 
-  if (typeof window !== "undefined") {
-    birdImage = new Image();
-    birdImage.src = '/images/bird.png';
-    backgroundImage = new Image();
-    backgroundImage.src = '/images/background.png';
-    topPipeImage = new Image();
-    topPipeImage.src = '/images/top-pipe.png';
-    bottomPipeImage = new Image();
-    bottomPipeImage.src = '/images/bottom-pipe.png';
-  }
+  const birdImageRef = useRef(null);
+  const backgroundImageRef = useRef(null);
+  const topPipeImageRef = useRef(null);
+  const bottomPipeImageRef = useRef(null);
 
-  const bird = {
-    x: 50,
-    y: 300,
-    width: 34,
-    height: 24,
-    gravity: 0.5,
-    lift: -6,
-    velocity: 0
-  };
-
-  let pipes = [];
-  const pipeWidth = 52;
-  let pipeGap = 150;
-  let pipeInterval = 3000;
-  const pipeVelocity = 1;
-
-  const adjustForScreenSize = () => {
-    const screenWidth = window.innerWidth;
-
-    if (screenWidth < 600) {
-      pipeGap = 115;
-      pipeInterval = 2000;
-    } else {
-      pipeGap = 150;
-      pipeInterval = 3000;
-    }
-  };
 
   const resetGame = () => {
     setGameOver(false);
     setGameStarted(false);
-    setShowInstructions(true);
     setScore(0);
-    bird.y = 300;
-    bird.velocity = 0;
-    pipes = [];
+  
   };
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+
+    // Load images
+    const birdImage = birdImageRef.current;
+    const backgroundImage = backgroundImageRef.current;
+    const topPipeImage = topPipeImageRef.current;
+    const bottomPipeImage = bottomPipeImageRef.current;
+
+    const bird = {
+      x: 50,
+      y: 300,
+      width: 34,
+      height: 24,
+      gravity: 0.5,
+      lift: -6,
+      velocity: 0,
+    };
+
+    let pipes = [];
+    const pipeWidth = 52;
+    let pipeGap = 150;
+    let pipeInterval = 3000;
+    const pipeVelocity = 1;
+
+    const adjustForScreenSize = () => {
+      const screenWidth = window.innerWidth;
+
+      if (screenWidth < 600) {
+        pipeGap = 115;
+        pipeInterval = 2000;
+      } else {
+        pipeGap = 150;
+        pipeInterval = 3000;
+      }
+    };
 
     const resizeCanvas = () => {
       const screenWidth = window.innerWidth;
@@ -97,7 +91,7 @@ const Game = () => {
       adjustForScreenSize();
       bird.y = canvas.height / 2 - bird.height / 2;
     };
-    
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -156,7 +150,6 @@ const Game = () => {
       if (e.key === ' ' && !gameOver) {
         if (!gameStarted) {
           setGameStarted(true);
-          setShowInstructions(false);
         }
         bird.velocity = bird.lift;
       }
@@ -166,7 +159,6 @@ const Game = () => {
       if (!gameOver) {
         if (!gameStarted) {
           setGameStarted(true);
-          setShowInstructions(false);
         }
         bird.velocity = bird.lift;
       }
@@ -205,39 +197,12 @@ const Game = () => {
       }}>
         <canvas ref={canvasRef}></canvas>
 
-        {showInstructions && !gameStarted && (
-          <div style={{ 
-            position: 'absolute', 
-            top: '50%', 
-            left: '50%', 
-            transform: 'translate(-50%, -50%)', 
-            textAlign: 'center', 
-            color: '#fff', 
-            fontSize: 'calc(10px + 2vmin)', 
-            fontFamily: 'Arial, sans-serif', 
-            padding: '0 10px', 
-            boxSizing: 'border-box'
-          }}>
-            <h1 style={{ margin: '0 0 10px 0' }}>Welcome!</h1>
-            <p>Press <strong>Space</strong> or tap the screen to start and control the bird.</p>
-          </div>
-        )}
-        {gameStarted && (
-          <div style={{ 
-            position: 'absolute', 
-            top: '5%', 
-            left: '50%', 
-            transform: 'translateX(-50%)', 
-            textAlign: 'center', 
-            color: '#fff', 
-            fontSize: 'calc(10px + 2vmin)', 
-            fontFamily: 'Arial, sans-serif', 
-            padding: '0 10px', 
-            boxSizing: 'border-box'
-          }}>
-            <h1 style={{ margin: '0 0 10px 0' }}>Score: {score}</h1>
-          </div>
-        )}
+        {}
+        <img ref={birdImageRef} src="/images/bird.png" alt="Bird" style={{ display: 'none' }} />
+        <img ref={backgroundImageRef} src="/images/background.png" alt="Background" style={{ display: 'none' }} />
+        <img ref={topPipeImageRef} src="/images/top-pipe.png" alt="Top Pipe" style={{ display: 'none' }} />
+        <img ref={bottomPipeImageRef} src="/images/bottom-pipe.png" alt="Bottom Pipe" style={{ display: 'none' }} />
+
         {gameOver && (
           <div style={{ 
             position: 'absolute', 
