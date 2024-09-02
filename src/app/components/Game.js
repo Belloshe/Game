@@ -1,42 +1,27 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 const Game = () => {
   const canvasRef = useRef(null);
-  const lastPipeTimeRef = useRef(Date.now()); // Using useRef to persist the last pipe timestamp
-
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
   const [score, setScore] = useState(0);
 
-  const [birdImage, setBirdImage] = useState();
-  const [backgroundImage, setBackgroundImage] = useState();
-  const [topPipeImage, setTopPipeImage] = useState();
-  const [bottomPipeImage, setBottomPipeImage] = useState();
+  let birdImage, backgroundImage, topPipeImage, bottomPipeImage;
 
-  useEffect(() => {
-    const loadImages = () => {
-      const birdImg = new Image();
-      birdImg.src = '/images/bird.png';
-      const backgroundImg = new Image();
-      backgroundImg.src = '/images/background.png';
-      const topPipeImg = new Image();
-      topPipeImg.src = '/images/top-pipe.png';
-      const bottomPipeImg = new Image();
-      bottomPipeImg.src = '/images/bottom-pipe.png';
-
-      setBirdImage(birdImg);
-      setBackgroundImage(backgroundImg);
-      setTopPipeImage(topPipeImg);
-      setBottomPipeImage(bottomPipeImg);
-    };
-
-    if (typeof window !== "undefined") {
-      loadImages();
-    }
-  }, []);
+  if (typeof window !== "undefined") {
+    birdImage = new Image();
+    birdImage.src = '/images/bird.png';
+    backgroundImage = new Image();
+    backgroundImage.src = '/images/background.png';
+    topPipeImage = new Image();
+    topPipeImage.src = '/images/top-pipe.png';
+    bottomPipeImage = new Image();
+    bottomPipeImage.src = '/images/bottom-pipe.png';
+  }
 
   const bird = {
     x: 50,
@@ -56,6 +41,7 @@ const Game = () => {
 
   const adjustForScreenSize = () => {
     const screenWidth = window.innerWidth;
+
     if (screenWidth < 600) {
       pipeGap = 115;
       pipeInterval = 2000;
@@ -73,10 +59,11 @@ const Game = () => {
     bird.y = 300;
     bird.velocity = 0;
     pipes = [];
-    lastPipeTimeRef.current = Date.now(); // Reset the time when the game is reset
   };
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
@@ -84,11 +71,11 @@ const Game = () => {
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
 
-      let width, height;
       if (screenWidth >= 600) {
         const aspectRatio = 4 / 3;
-        width = 800;
-        height = width / aspectRatio;
+        let width = 800;
+        let height = width / aspectRatio;
+
         if (width > screenWidth * 0.9) {
           width = screenWidth * 0.9;
           height = width / aspectRatio;
@@ -97,30 +84,33 @@ const Game = () => {
           height = screenHeight * 0.9;
           width = height * aspectRatio;
         }
+
+        canvas.width = width;
+        canvas.height = height;
       } else {
-        width = screenWidth * 0.9;
-        height = screenHeight * 0.9;
+        let width = screenWidth * 0.9;
+        let height = screenHeight * 0.9;
+        canvas.width = width;
+        canvas.height = height;
       }
 
-      canvas.width = width;
-      canvas.height = height;
       adjustForScreenSize();
       bird.y = canvas.height / 2 - bird.height / 2;
     };
-
-    window.addEventListener('resize', resizeCanvas);
+    
     resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let lastPipeTime = Date.now();
+    let animationFrameId;
 
     const updateGame = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the background
-      backgroundImage && ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
 
       if (gameStarted) {
-        // Handle Pipes
-        if (Date.now() - lastPipeTimeRef.current > pipeInterval) {
-          lastPipeTimeRef.current = Date.now();
+        if (Date.now() - lastPipeTime > pipeInterval) {
+          lastPipeTime = Date.now();
           const minHeight = 50;
           const maxHeight = canvas.height - 50 - pipeGap;
           const pipeTopY = Math.floor(Math.random() * (maxHeight - minHeight) + minHeight);
@@ -129,24 +119,26 @@ const Game = () => {
 
         pipes.forEach(pipe => {
           pipe.x -= pipeVelocity;
-          topPipeImage && ctx.drawImage(topPipeImage, pipe.x, pipe.y, pipeWidth, canvas.height);
-          const bottomPipeY = pipe.y + canvas.height + pipeGap;
-          bottomPipeImage && ctx.drawImage(bottomPipeImage, pipe.x, bottomPipeY, pipeWidth, canvas.height);
-          
-          // Check for score update
+          ctx.drawImage(topPipeImage, pipe.x, pipe.y, pipeWidth, canvas.height);
+          let bottomPipeY = pipe.y + canvas.height + pipeGap;
+          ctx.drawImage(bottomPipeImage, pipe.x, bottomPipeY, pipeWidth, canvas.height);
+
           if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
             pipe.passed = true;
             setScore(prevScore => prevScore + 1);
           }
         });
 
-        // Handle bird dynamics
         bird.velocity += bird.gravity;
         bird.y += bird.velocity;
-        birdImage && ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
 
-        // Game over conditions
-        if (bird.y <= 0 || bird.y + bird.height >= canvas.height || pipes.some(pipe => (
+        if (bird.y <= 0 || bird.y + bird.height >= canvas.height) {
+          setGameOver(true);
+        }
+
+        ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
+
+        if (pipes.some(pipe => (
           bird.x + bird.width > pipe.x &&
           bird.x < pipe.x + pipeWidth &&
           (bird.y <= pipe.y + canvas.height || bird.y + bird.height >= pipe.y + canvas.height + pipeGap)
@@ -182,7 +174,7 @@ const Game = () => {
 
     document.addEventListener('keydown', handleKeyPress);
     document.addEventListener('touchstart', handleTouchStart);
-    let animationFrameId = requestAnimationFrame(updateGame);
+    animationFrameId = requestAnimationFrame(updateGame);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
@@ -193,26 +185,83 @@ const Game = () => {
   }, [gameOver, gameStarted]);
 
   return (
-    <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100%', padding: '10px', boxSizing: 'border-box' }}>
-      <div style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%', overflow: 'hidden', width: 'auto', height: 'auto' }}>
+    <div style={{ 
+      position: 'relative', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh', 
+      width: '100%', 
+      padding: '10px', 
+      boxSizing: 'border-box'
+    }}>
+      <div style={{ 
+        position: 'relative', 
+        maxWidth: '100%', 
+        maxHeight: '100%', 
+        overflow: 'hidden', 
+        width: 'auto', 
+        height: 'auto' 
+      }}>
         <canvas ref={canvasRef}></canvas>
 
         {showInstructions && !gameStarted && (
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: '#87B655', fontSize: 'calc(10px + 2vmin)', fontFamily: 'Arial, sans-serif', padding: '0 10px', boxSizing: 'border-box' }}>
+          <div style={{ 
+            position: 'absolute', 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)', 
+            textAlign: 'center', 
+            color: '#fff', 
+            fontSize: 'calc(10px + 2vmin)', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '0 10px', 
+            boxSizing: 'border-box'
+          }}>
             <h1 style={{ margin: '0 0 10px 0' }}>Welcome!</h1>
             <p>Press <strong>Space</strong> or tap the screen to start and control the bird.</p>
           </div>
         )}
         {gameStarted && (
-          <div style={{ position: 'absolute', top: '5%', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', color: '#fff', fontSize: 'calc(10px + 2vmin)', fontFamily: 'Arial, sans-serif', padding: '0 10px', boxSizing: 'border-box' }}>
+          <div style={{ 
+            position: 'absolute', 
+            top: '5%', 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            textAlign: 'center', 
+            color: '#fff', 
+            fontSize: 'calc(10px + 2vmin)', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '0 10px', 
+            boxSizing: 'border-box'
+          }}>
             <h1 style={{ margin: '0 0 10px 0' }}>Score: {score}</h1>
           </div>
         )}
         {gameOver && (
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: '#fff', fontSize: 'calc(10px + 2vmin)', fontFamily: 'Arial, sans-serif', padding: '0 10px', boxSizing: 'border-box' }}>
+          <div style={{ 
+            position: 'absolute', 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)', 
+            textAlign: 'center', 
+            color: '#fff', 
+            fontSize: 'calc(10px + 2vmin)', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '0 10px', 
+            boxSizing: 'border-box'
+          }}>
             <h1 style={{ margin: '0 0 10px 0' }}>Game Over</h1>
             <p>Final Score: {score}</p>
-            <button onClick={resetGame} style={{ fontSize: 'calc(10px + 1vmin)', padding: '10px 20px', cursor: 'pointer', borderRadius: '5px', backgroundColor: '#4CAF50', color: 'white', border: 'none' }}>Start Over</button>
+            <button onClick={resetGame} style={{ 
+              fontSize: 'calc(10px + 1vmin)', 
+              padding: '10px 20px', 
+              cursor: 'pointer', 
+              borderRadius: '5px', 
+              backgroundColor: '#4CAF50', 
+              color: 'white', 
+              border: 'none' 
+            }}>Start Over</button>
           </div>
         )}
       </div>
