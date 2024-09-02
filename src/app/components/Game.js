@@ -7,16 +7,20 @@ const Game = () => {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
-  const [score, setScore] = useState(0); 
+  const [score, setScore] = useState(0);
 
-  const birdImage = new Image();
-  birdImage.src = '/images/bird.png';
-  const backgroundImage = new Image();
-  backgroundImage.src = '/images/background.png';
-  const topPipeImage = new Image();
-  topPipeImage.src = '/images/top-pipe.png';
-  const bottomPipeImage = new Image();
-  bottomPipeImage.src = '/images/bottom-pipe.png';
+  let birdImage, backgroundImage, topPipeImage, bottomPipeImage;
+
+  if (typeof window !== "undefined") {
+    birdImage = new Image();
+    birdImage.src = '/images/bird.png';
+    backgroundImage = new Image();
+    backgroundImage.src = '/images/background.png';
+    topPipeImage = new Image();
+    topPipeImage.src = '/images/top-pipe.png';
+    bottomPipeImage = new Image();
+    bottomPipeImage.src = '/images/bottom-pipe.png';
+  }
 
   const bird = {
     x: 50,
@@ -30,18 +34,18 @@ const Game = () => {
 
   let pipes = [];
   const pipeWidth = 52;
-  let pipeGap = 150;  
-  let pipeInterval = 3000;  
+  let pipeGap = 150;
+  let pipeInterval = 3000;
   const pipeVelocity = 1;
 
   const adjustForScreenSize = () => {
     const screenWidth = window.innerWidth;
 
-    if (screenWidth < 600) { 
-      pipeGap = 115;  
-      pipeInterval = 2000;  
+    if (screenWidth < 600) {
+      pipeGap = 115;
+      pipeInterval = 2000;
     } else {
-      pipeGap = 150; 
+      pipeGap = 150;
       pipeInterval = 3000;
     }
   };
@@ -50,13 +54,15 @@ const Game = () => {
     setGameOver(false);
     setGameStarted(false);
     setShowInstructions(true);
-    setScore(0); 
-    bird.y = 300; 
-    bird.velocity = 0; 
+    setScore(0);
+    bird.y = 300;
+    bird.velocity = 0;
     pipes = [];
   };
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
@@ -65,9 +71,8 @@ const Game = () => {
       const screenHeight = window.innerHeight;
 
       if (screenWidth >= 600) {
-
         const aspectRatio = 4 / 3;
-        let width = 800; 
+        let width = 800;
         let height = width / aspectRatio;
 
         if (width > screenWidth * 0.9) {
@@ -82,7 +87,6 @@ const Game = () => {
         canvas.width = width;
         canvas.height = height;
       } else {
-
         let width = screenWidth * 0.9;
         let height = screenHeight * 0.9;
         canvas.width = width;
@@ -90,7 +94,7 @@ const Game = () => {
       }
 
       adjustForScreenSize();
-      bird.y = canvas.height / 2 - bird.height / 2; 
+      bird.y = canvas.height / 2 - bird.height / 2;
     };
     
     resizeCanvas();
@@ -180,70 +184,86 @@ const Game = () => {
   }, [gameOver, gameStarted]);
 
   return (
-    <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100%', padding: '10px', boxSizing: 'border-box' }}>
+    <div style={{ 
+      position: 'relative', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh', 
+      width: '100%', 
+      padding: '10px', 
+      boxSizing: 'border-box'
+    }}>
       <div style={{ 
-        maxWidth: '100%',
-        maxHeight: '100%',
-        overflow: 'hidden'
+        position: 'relative', 
+        maxWidth: '100%', 
+        maxHeight: '100%', 
+        overflow: 'hidden', 
+        width: 'auto', 
+        height: 'auto' 
       }}>
         <canvas ref={canvasRef}></canvas>
+
+        {showInstructions && !gameStarted && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)', 
+            textAlign: 'center', 
+            color: '#fff', 
+            fontSize: 'calc(10px + 2vmin)', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '0 10px', 
+            boxSizing: 'border-box'
+          }}>
+            <h1 style={{ margin: '0 0 10px 0' }}>Welcome!</h1>
+            <p>Press <strong>Space</strong> or tap the screen to start and control the bird.</p>
+          </div>
+        )}
+        {gameStarted && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '5%', 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            textAlign: 'center', 
+            color: '#fff', 
+            fontSize: 'calc(10px + 2vmin)', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '0 10px', 
+            boxSizing: 'border-box'
+          }}>
+            <h1 style={{ margin: '0 0 10px 0' }}>Score: {score}</h1>
+          </div>
+        )}
+        {gameOver && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)', 
+            textAlign: 'center', 
+            color: '#fff', 
+            fontSize: 'calc(10px + 2vmin)', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '0 10px', 
+            boxSizing: 'border-box'
+          }}>
+            <h1 style={{ margin: '0 0 10px 0' }}>Game Over</h1>
+            <p>Final Score: {score}</p>
+            <button onClick={resetGame} style={{ 
+              fontSize: 'calc(10px + 1vmin)', 
+              padding: '10px 20px', 
+              cursor: 'pointer', 
+              borderRadius: '5px', 
+              backgroundColor: '#4CAF50', 
+              color: 'white', 
+              border: 'none' 
+            }}>Start Over</button>
+          </div>
+        )}
       </div>
-      {showInstructions && !gameStarted && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '40%', 
-          textAlign: 'center', 
-          width: '100%', 
-          color: '#fff', 
-          fontSize: 'calc(12px + 2vmin)', 
-          fontFamily: 'Arial, sans-serif',
-          padding: '0 10px', 
-          boxSizing: 'border-box'
-        }}>
-          <h1 style={{ margin: '0 0 10px 0' }}>Welcome!</h1>
-          <p>Press <strong>Space</strong> or tap the screen to start and control the bird.</p>
-        </div>
-      )}
-      {gameStarted && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '10%', 
-          textAlign: 'center', 
-          width: '100%', 
-          color: '#fff', 
-          fontSize: 'calc(12px + 2vmin)', 
-          fontFamily: 'Arial, sans-serif',
-          padding: '0 10px', 
-          boxSizing: 'border-box'
-        }}>
-          <h1 style={{ margin: '0 0 10px 0' }}>Score: {score}</h1> 
-        </div>
-      )}
-      {gameOver && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '40%', 
-          textAlign: 'center', 
-          width: '100%', 
-          color: '#fff', 
-          fontSize: 'calc(12px + 2vmin)', 
-          fontFamily: 'Arial, sans-serif',
-          padding: '0 10px', 
-          boxSizing: 'border-box'
-        }}>
-          <h1 style={{ margin: '0 0 10px 0' }}>Game Over</h1>
-          <p>Final Score: {score}</p> 
-          <button onClick={resetGame} style={{ 
-            fontSize: 'calc(10px + 1vmin)', 
-            padding: '10px 20px', 
-            cursor: 'pointer', 
-            borderRadius: '5px', 
-            backgroundColor: '#4CAF50', 
-            color: 'white', 
-            border: 'none' 
-          }}>Start Over</button>
-        </div>
-      )}
     </div>
   );
 };
